@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Movie Filtering System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background-color: #1a237e;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .filter-container {
+            padding: 20px;
+            background-color: #e8eaf6;
+            border-bottom: 1px solid #c5cae9;
+        }
+
+        .filter-section {
+            margin-bottom: 20px;
+        }
+
+        .filter-section h3 {
+            margin-bottom: 10px;
+            color: #303f9f;
+        }
+
+        .genre-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .chip {
+            padding: 8px 15px;
+            background-color: #e0e0e0;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            user-select: none;
+        }
+
+        .chip.active {
+            background-color: #3f51b5;
+            color: white;
+        }
+
+        .year-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .dropdown {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            min-width: 120px;
+        }
+
+        .rating-filter {
+            margin-bottom: 15px;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .slider {
+            width: 100%;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #3f51b5;
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: #e0e0e0;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .movies-container {
+            padding: 20px;
+            position: relative;
+            min-height: 400px;
+        }
+
+        .movies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .movie-card {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+            background-color: white;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .movie-poster {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-bottom: 1px solid #eee;
+        }
+
+        .movie-info {
+            padding: 15px;
+        }
+
+        .movie-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .movie-meta {
+            display: flex;
+            justify-content: space-between;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .movie-genres {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .movie-genre {
+            font-size: 0.8rem;
+            background-color: #e8eaf6;
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3f51b5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        .backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        .filter-drawer {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100%;
+            background-color: white;
+            padding: 20px;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s;
+            z-index: 20;
+            overflow-y: auto;
+        }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-drawer {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .show-filters {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .filter-container {
+                display: none;
+            }
+
+            .show-filters {
+                display: block;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                background-color: #3f51b5;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+                z-index: 5;
+                border: none;
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Movie Explorer</h1>
+            <p>Find your next favorite film</p>
+        </header>
+
+        <div class="filter-container">
+            <div class="filter-section">
+                <h3>Genres</h3>
+                <div class="genre-chips" id="genre-chips">
+                    <!-- Chips will be generated here -->
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <h3>Release Year</h3>
+                <div class="year-filter">
+                    <span>From:</span>
+                    <select id="year-from" class="dropdown">
+                        <!-- Years will be generated here -->
+                    </select>
+                    <span>To:</span>
+                    <select id="year-to" class="dropdown">
+                        <!-- Years will be generated here -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <h3>Rating</h3>
+                <div class="rating-filter">
+                    <div class="slider-container">
+                        <input type="range" min="0" max="10" value="0" step="0.1" class="slider" id="rating-min">
+                        <div class="slider-labels">
+                            <span id="rating-min-value">0</span>
+                            <span>Minimum Rating</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="rating-filter">
+                    <div class="slider-container">
+                        <input type="range" min="0" max="10" value="10" step="0.1" class="slider" id="rating-max">
+                        <div class="slider-labels">
+                            <span id="rating-max-value">10</span>
+                            <span>Maximum Rating</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <button class="btn btn-secondary" id="reset-filters">Reset Filters</button>
+                <button class="btn btn-primary" id="apply-filters">Apply Filters</button>
+            </div>
+        </div>
+
+        <div class="movies-container">
+            <div class="loading-spinner" id="loading-spinner"></div>
+            <div class="movies-grid" id="movies-grid">
+                <!-- Movies will be displayed here -->
+            </div>
+            <div class="no-results" id="no-results" style="display: none;">
+                <h3>No movies found matching your filters</h3>
+                <p>Try adjusting your filters to see more results</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Filter Drawer -->
+    <button class="show-filters" id="show-filters">+</button>
+    <div class="backdrop" id="backdrop"></div>
+    <div class="filter-drawer" id="filter-drawer">
+        <div class="drawer-header">
+            <h3>Filters</h3>
+            <button class="close-drawer" id="close-drawer">×</button>
+        </div>
+        <!-- Filter content will be cloned here for mobile -->
+    </div>
+
+    <script>
+        // Mock movie data
+        const moviesData = [
+            { id: 1, title: "Inception", year: 2010, rating: 8.8, genres: ["Sci-Fi", "Action", "Thriller"], poster: "/api/placeholder/250/300" },
+            { id: 2, title: "The Shawshank Redemption", year: 1994, rating: 9.3, genres: ["Drama"], poster: "/api/placeholder/250/300" },
+            { id: 3, title: "The Dark Knight", year: 2008, rating: 9.0, genres: ["Action", "Crime", "Drama"], poster: "/api/placeholder/250/300" },
+            { id: 4, title: "Pulp Fiction", year: 1994, rating: 8.9, genres: ["Crime", "Drama"], poster: "/api/placeholder/250/300" },
+            { id: 5, title: "Fight Club", year: 1999, rating: 8.8, genres: ["Drama", "Thriller"], poster: "/api/placeholder/250/300" },
+            { id: 6, title: "Forrest Gump", year: 1994, rating: 8.8, genres: ["Drama", "Romance"], poster: "/api/placeholder/250/300" },
+            { id: 7, title: "The Matrix", year: 1999, rating: 8.7, genres: ["Action", "Sci-Fi"], poster: "/api/placeholder/250/300" },
+            { id: 8, title: "Goodfellas", year: 1990, rating: 8.7, genres: ["Crime", "Drama"], poster: "/api/placeholder/250/300" },
+            { id: 9, title: "The Silence of the Lambs", year: 1991, rating: 8.6, genres: ["Crime", "Drama", "Thriller"], poster: "/api/placeholder/250/300" },
+            { id: 10, title: "Star Wars: Episode V", year: 1980, rating: 8.7, genres: ["Action", "Adventure", "Fantasy"], poster: "/api/placeholder/250/300" },
+            { id: 11, title: "The Lord of the Rings: The Fellowship of the Ring", year: 2001, rating: 8.8, genres: ["Adventure", "Drama", "Fantasy"], poster: "/api/placeholder/250/300" },
+            { id: 12, title: "Back to the Future", year: 1985, rating: 8.5, genres: ["Adventure", "Comedy", "Sci-Fi"], poster: "/api/placeholder/250/300" },
+            { id: 13, title: "The Godfather", year: 1972, rating: 9.2, genres: ["Crime", "Drama"], poster: "/api/placeholder/250/300" },
+            { id: 14, title: "Interstellar", year: 2014, rating: 8.6, genres: ["Adventure", "Drama", "Sci-Fi"], poster: "/api/placeholder/250/300" },
+            { id: 15, title: "Whiplash", year: 2014, rating: 8.5, genres: ["Drama", "Music"], poster: "/api/placeholder/250/300" },
+            { id: 16, title: "The Departed", year: 2006, rating: 8.5, genres: ["Crime", "Drama", "Thriller"], poster: "/api/placeholder/250/300" },
+            { id: 17, title: "Parasite", year: 2019, rating: 8.6, genres: ["Comedy", "Drama", "Thriller"], poster: "/api/placeholder/250/300" },
+            { id: 18, title: "The Green Mile", year: 1999, rating: 8.6, genres: ["Crime", "Drama", "Fantasy"], poster: "/api/placeholder/250/300" },
+            { id: 19, title: "Gladiator", year: 2000, rating: 8.5, genres: ["Action", "Adventure", "Drama"], poster: "/api/placeholder/250/300" },
+            { id: 20, title: "The Prestige", year: 2006, rating: 8.5, genres: ["Drama", "Mystery", "Sci-Fi"], poster: "/api/placeholder/250/300" },
+            { id: 21, title: "Avatar", year: 2009, rating: 7.8, genres: ["Action", "Adventure", "Fantasy"], poster: "/api/placeholder/250/300" },
+            { id: 22, title: "Titanic", year: 1997, rating: 7.9, genres: ["Drama", "Romance"], poster: "/api/placeholder/250/300" },
+            { id: 23, title: "Black Panther", year: 2018, rating: 7.3, genres: ["Action", "Adventure", "Sci-Fi"], poster: "/api/placeholder/250/300" },
+            { id: 24, title: "Jurassic Park", year: 1993, rating: 8.2, genres: ["Adventure", "Sci-Fi", "Thriller"], poster: "/api/placeholder/250/300" },
+            { id: 25, title: "Jaws", year: 1975, rating: 8.0, genres: ["Adventure", "Drama", "Thriller"], poster: "/api/placeholder/250/300" },
+            { id: 26, title: "E.T. the Extra-Terrestrial", year: 1982, rating: 7.9, genres: ["Adventure", "Family", "Sci-Fi"], poster: "/api/placeholder/250/300" },
+            { id: 27, title: "The Lion King", year: 1994, rating: 8.5, genres: ["Animation", "Adventure", "Drama"], poster: "/api/placeholder/250/300" },
+            { id: 28, title: "Toy Story", year: 1995, rating: 8.3, genres: ["Animation", "Adventure", "Comedy"], poster: "/api/placeholder/250/300" },
+            { id: 29, title: "Wonder Woman", year: 2017, rating: 7.4, genres: ["Action", "Adventure", "Fantasy"], poster: "/api/placeholder/250/300" },
+            { id: 30, title: "Deadpool", year: 2016, rating: 8.0, genres: ["Action", "Adventure", "Comedy"], poster: "/api/placeholder/250/300" }
+        ];
+
+        // App state
+        const appState = {
+            movies: [...moviesData],
+            filteredMovies: [...moviesData],
+            filters: {
+                genres: [],
+                yearFrom: 1970,
+                yearTo: 2025,
+                ratingMin: 0,
+                ratingMax: 10
+            },
+            isLoading: false,
+            page: 1,
+            itemsPerPage: 10,
+            displayedMovies: []
+        };
+
+        // DOM Elements
+        const elements = {
+            genreChips: document.getElementById('genre-chips'),
+            yearFromDropdown: document.getElementById('year-from'),
+            yearToDropdown: document.getElementById('year-to'),
+            ratingMinSlider: document.getElementById('rating-min'),
+            ratingMaxSlider: document.getElementById('rating-max'),
+            ratingMinValue: document.getElementById('rating-min-value'),
+            ratingMaxValue: document.getElementById('rating-max-value'),
+            resetFiltersButton: document.getElementById('reset-filters'),
+            applyFiltersButton: document.getElementById('apply-filters'),
+            moviesGrid: document.getElementById('movies-grid'),
+            loadingSpinner: document.getElementById('loading-spinner'),
+            noResults: document.getElementById('no-results'),
+            showFiltersButton: document.getElementById('show-filters'),
+            backdrop: document.getElementById('backdrop'),
+            filterDrawer: document.getElementById('filter-drawer'),
+            closeDrawerButton: document.getElementById('close-drawer')
+        };
+
+        // Initialize the app
+        function initApp() {
+            // Extract unique genres from movies
+            const allGenres = [...new Set(moviesData.flatMap(movie => movie.genres))].sort();
+            
+            // Generate genre chips
+            allGenres.forEach(genre => {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.textContent = genre;
+                chip.dataset.genre = genre;
+                chip.addEventListener('click', () => toggleGenreFilter(chip, genre));
+                elements.genreChips.appendChild(chip);
+            });
+
+            // Generate year options
+            const currentYear = new Date().getFullYear();
+            for (let year = 1970; year <= currentYear; year++) {
+                const optionFrom = document.createElement('option');
+                optionFrom.value = year;
+                optionFrom.textContent = year;
+                if (year === 1970) optionFrom.selected = true;
+                elements.yearFromDropdown.appendChild(optionFrom);
+
+                const optionTo = document.createElement('option');
+                optionTo.value = year;
+                optionTo.textContent = year;
+                if (year === currentYear) optionTo.selected = true;
+                elements.yearToDropdown.appendChild(optionTo);
+            }
+
+            // Set up event listeners
+            elements.ratingMinSlider.addEventListener('input', updateRatingMinValue);
+            elements.ratingMaxSlider.addEventListener('input', updateRatingMaxValue);
+            elements.resetFiltersButton.addEventListener('click', resetFilters);
+            elements.applyFiltersButton.addEventListener('click', applyFilters);
+
+            // Mobile drawer setup
+            elements.showFiltersButton.addEventListener('click', openFilterDrawer);
+            elements.closeDrawerButton.addEventListener('click', closeFilterDrawer);
+            elements.backdrop.addEventListener('click', closeFilterDrawer);
+
+            // Clone filter content for mobile drawer
+            const filterContent = document.querySelector('.filter-container').cloneNode(true);
+            elements.filterDrawer.appendChild(filterContent);
+
+            // Initial display
+            updateDisplayedMovies();
+
+            // Set up infinite scroll
+            window.addEventListener('scroll', handleScroll);
+        }
+
+        // Toggle genre filter
+        function toggleGenreFilter(chipElement, genre) {
+            chipElement.classList.toggle('active');
+            
+            if (chipElement.classList.contains('active')) {
+                if (!appState.filters.genres.includes(genre)) {
+                    appState.filters.genres.push(genre);
+                }
+            } else {
+                const index = appState.filters.genres.indexOf(genre);
+                if (index !== -1) {
+                    appState.filters.genres.splice(index, 1);
+                }
+            }
+        }
+
+        // Update slider values
+        function updateRatingMinValue() {
+            const value = parseFloat(elements.ratingMinSlider.value);
+            elements.ratingMinValue.textContent = value.toFixed(1);
+            appState.filters.ratingMin = value;
+            
+            // Ensure min doesn't exceed max
+            if (value > parseFloat(elements.ratingMaxSlider.value)) {
+                elements.ratingMaxSlider.value = value;
+                elements.ratingMaxValue.textContent = value.toFixed(1);
+                appState.filters.ratingMax = value;
+            }
+        }
+
+        function updateRatingMaxValue() {
+            const value = parseFloat(elements.ratingMaxSlider.value);
+            elements.ratingMaxValue.textContent = value.toFixed(1);
+            appState.filters.ratingMax = value;
+            
+            // Ensure max isn't below min
+            if (value < parseFloat(elements.ratingMinSlider.value)) {
+                elements.ratingMinSlider.value = value;
+                elements.ratingMinValue.textContent = value.toFixed(1);
+                appState.filters.ratingMin = value;
+            }
+        }
+
+        // Reset all filters
+        function resetFilters() {
+            // Reset chips
+            const chips = document.querySelectorAll('.chip');
+            chips.forEach(chip => chip.classList.remove('active'));
+            
+            // Reset year dropdowns
+            elements.yearFromDropdown.value = 1970;
+            elements.yearToDropdown.value = new Date().getFullYear();
+            
+            // Reset rating sliders
+            elements.ratingMinSlider.value = 0;
+            elements.ratingMaxSlider.value = 10;
+            elements.ratingMinValue.textContent = '0';
+            elements.ratingMaxValue.textContent = '10';
+            
+            // Reset state
+            appState.filters = {
+                genres: [],
+                yearFrom: 1970,
+                yearTo: new Date().getFullYear(),
+                ratingMin: 0,
+                ratingMax: 10
+            };
+            
+            // Apply the reset filters
+            applyFilters();
+        }
+
+        // Apply filters with debouncing
+        let filterTimeout;
+        function applyFilters() {
+            clearTimeout(filterTimeout);
+            
+            // Show loading state
+            elements.loadingSpinner.style.display = 'block';
+            appState.isLoading = true;
+            
+            filterTimeout = setTimeout(() => {
+                // Get values from UI
+                appState.filters.yearFrom = parseInt(elements.yearFromDropdown.value);
+                appState.filters.yearTo = parseInt(elements.yearToDropdown.value);
+                
+                // Filter movies
+                appState.filteredMovies = moviesData.filter(movie => {
+                    // Check year range
+                    if (movie.year < appState.filters.yearFrom || movie.year > appState.filters.yearTo) {
+                        return false;
+                    }
+                    
+                    // Check rating range
+                    if (movie.rating < appState.filters.ratingMin || movie.rating > appState.filters.ratingMax) {
+                        return false;
+                    }
+                    
+                    // Check genres (if any selected)
+                    if (appState.filters.genres.length > 0) {
+                        return appState.filters.genres.some(genre => movie.genres.includes(genre));
+                    }
+                    
+                    return true;
+                });
+                
+                // Reset pagination
+                appState.page = 1;
+                
+                // Update UI
+                updateDisplayedMovies();
+                
+                // Hide loading state
+                elements.loadingSpinner.style.display = 'none';
+                appState.isLoading = false;
+                
+                // Close mobile drawer if open
+                closeFilterDrawer();
+            }, 300); // 300ms debounce
+        }
+
+        // Update displayed movies
+        function updateDisplayedMovies() {
+            // Clear current movies
+            elements.moviesGrid.innerHTML = '';
+            
+            // Show no results message if needed
+            if (appState.filteredMovies.length === 0) {
+                elements.noResults.style.display = 'block';
+                return;
+            } else {
+                elements.noResults.style.display = 'none';
+            }
+            
+            // Calculate slice for pagination
+            const start = 0;
+            const end = appState.page * appState.itemsPerPage;
+            appState.displayedMovies = appState.filteredMovies.slice(start, end);
+            
+            // Render movies
+            appState.displayedMovies.forEach(renderMovieCard);
+        }
+
+        // Render a movie card
+        function renderMovieCard(movie) {
+            const movieCard = document.createElement('div');
+            movieCard.className = 'movie-card';
+            movieCard.innerHTML = `
+                <img src="${movie.poster}" alt="${movie.title}" class="movie-poster">
+                <div class="movie-info">
+                    <div class="movie-title">${movie.title}</div>
+                    <div class="movie-meta">
+                        <span>${movie.year}</span>
+                        <span>⭐ ${movie.rating.toFixed(1)}</span>
+                    </div>
+                    <div class="movie-genres">
+                        ${movie.genres.map(genre => `<span class="movie-genre">${genre}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+            elements.moviesGrid.appendChild(movieCard);
+        }
+
+        // Handle infinite scroll
+        function handleScroll() {
+            if (appState.isLoading) return;
+            
+            const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+            
+            if (scrollTop + clientHeight >= scrollHeight - 5) {
+                if (appState.displayedMovies.length < appState.filteredMovies.length) {
+                    // Load more
+                    appState.page++;
+                    elements.loadingSpinner.style.display = 'block';
+                    appState.isLoading = true;
+                    
+                    // Simulate API delay
+                    setTimeout(() => {
+                        updateDisplayedMovies();
+                        elements.loadingSpinner.style.display = 'none';
+                        appState.isLoading = false;
+                    }, 500);
+                }
+            }
+        }
+
+        // Mobile drawer functions
+        function openFilterDrawer() {
+            elements.backdrop.style.display = 'block';
+            elements.filterDrawer.style.right = '0';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFilterDrawer() {
+            elements.backdrop.style.display = 'none';
+            elements.filterDrawer.style.right = '-300px';
+            document.body.style.overflow = 'auto';
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
